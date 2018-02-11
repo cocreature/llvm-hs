@@ -128,6 +128,7 @@ library
     LLVM.Internal.MemoryBuffer
     LLVM.Internal.Metadata
     LLVM.Internal.Module
+    LLVM.Internal.ObjectFile
     LLVM.Internal.OrcJIT
     LLVM.Internal.OrcJIT.CompileLayer
     LLVM.Internal.OrcJIT.CompileOnDemandLayer
@@ -170,6 +171,7 @@ library
     LLVM.Internal.FFI.MemoryBuffer
     LLVM.Internal.FFI.Metadata
     LLVM.Internal.FFI.Module
+    LLVM.Internal.FFI.ObjectFile
     LLVM.Internal.FFI.OrcJIT
     LLVM.Internal.FFI.OrcJIT.CompileLayer
     LLVM.Internal.FFI.OrcJIT.CompileOnDemandLayer

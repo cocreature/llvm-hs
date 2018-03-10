@@ -16,11 +16,14 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+#include "llvm-c/Object.h"
+
 using namespace llvm;
 using namespace orc;
 
 typedef unsigned LLVMModuleHandle;
-typedef unsigned LLVMObjSetHandle;
+typedef unsigned LLVMObjectHandle;
 typedef llvm::orc::LambdaResolver<
     std::function<JITSymbol(const std::string &name)>,
     std::function<JITSymbol(const std::string &name)>>
@@ -293,6 +296,23 @@ LLVMLambdaResolverRef LLVM_Hs_createLambdaResolver(
 
 void LLVM_Hs_disposeLambdaResolver(LLVMLambdaResolverRef resolver) {
     delete resolver;
+}
+
+LLVMObjectHandle LLVM_Hs_LinkingLayer_addObject(LinkingLayer *linkLayer,
+                                                LLVMObjectFileRef  obj,
+                                                LLVMLambdaResolverRef resolver,
+                                                char **errorMessage) {
+    auto obj2 = reinterpret_cast<object::OwningBinary<object::ObjectFile> *>(obj);
+    auto obj3 = std::move(*obj2);
+    auto obj4 = std::make_shared<object::OwningBinary<object::ObjectFile>>(std::move(obj3));
+    if (auto handleOrErr = linkLayer->addObject(std::move(obj4), *resolver)) {
+        *errorMessage = nullptr;
+        return *handleOrErr;
+    } else {
+        std::string errString = toString(handleOrErr.takeError());
+        *errorMessage = strdup(errString.c_str());
+        return 0;
+    }
 }
 
 static JITSymbolFlags unwrap(LLVMJITSymbolFlags f) {

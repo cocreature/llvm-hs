@@ -17,7 +17,6 @@ import LLVM.Internal.Target
 import qualified LLVM.Internal.FFI.DataLayout as FFI
 import qualified LLVM.Internal.FFI.LLVMCTypes as FFI
 import qualified LLVM.Internal.FFI.OrcJIT as FFI
-import qualified LLVM.Internal.FFI.PtrHierarchy as FFI
 import qualified LLVM.Internal.FFI.Target as FFI
 
 -- | A mangled symbol which can be used in 'findSymbol'. This can be
@@ -60,17 +59,6 @@ data SymbolResolver =
     -- 'externalResolver' is used as a fallback to find external symbols.
     externalResolver :: !SymbolResolverFn
   }
-
--- | After a 'CompileLayer' has compiled the modules to object code,
--- it passes the resulting object files to a 'LinkingLayer'.
-class LinkingLayer l where
-  getLinkingLayer :: l -> Ptr FFI.LinkingLayer
-
--- | Bare bones implementation of a 'LinkingLayer'.
-newtype ObjectLinkingLayer = ObjectLinkingLayer (Ptr FFI.ObjectLinkingLayer)
-
-instance LinkingLayer ObjectLinkingLayer where
-  getLinkingLayer (ObjectLinkingLayer ptr) = FFI.upCast ptr
 
 instance Monad m => EncodeM m JITSymbolFlags FFI.JITSymbolFlags where
   encodeM f = return $ foldr1 (.|.) [
@@ -127,19 +115,6 @@ allocWithCleanup cleanups alloc free = mask $ \restore -> do
 -- | allocate a function pointer and register it for cleanup.
 allocFunPtr :: IORef [IO ()] -> IO (FunPtr a) -> IO (FunPtr a)
 allocFunPtr cleanups alloc = allocWithCleanup cleanups alloc freeHaskellFunPtr
-
--- | Dispose of a 'LinkingLayer'.
-disposeLinkingLayer :: LinkingLayer l => l -> IO ()
-disposeLinkingLayer = FFI.disposeLinkingLayer . getLinkingLayer
-
--- | Create a new 'ObjectLinkingLayer'. This should be disposed using
--- 'disposeLinkingLayer' when it is no longer needed.
-newObjectLinkingLayer :: IO ObjectLinkingLayer
-newObjectLinkingLayer = ObjectLinkingLayer <$> FFI.createObjectLinkingLayer
-
--- | 'bracket'-style wrapper around 'newObjectLinkingLayer' and 'disposeLinkingLayer'.
-withObjectLinkingLayer :: (ObjectLinkingLayer -> IO a) -> IO a
-withObjectLinkingLayer = bracket newObjectLinkingLayer disposeLinkingLayer
 
 createRegisteredDataLayout :: (MonadAnyCont IO m) => TargetMachine -> IORef [IO ()] -> m (Ptr FFI.DataLayout)
 createRegisteredDataLayout (TargetMachine tm) cleanups =

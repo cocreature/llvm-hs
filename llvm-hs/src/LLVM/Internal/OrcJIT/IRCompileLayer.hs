@@ -15,6 +15,7 @@ import qualified LLVM.Internal.FFI.PtrHierarchy as FFI
 import LLVM.Internal.OrcJIT
 import LLVM.Internal.OrcJIT.CompileLayer
 import LLVM.Internal.Target
+import LLVM.Internal.OrcJIT.LinkingLayer (LinkingLayer(..))
 
 -- | 'IRCompileLayer' compiles modules immediately when they are
 -- added. It parametrized by a 'LinkingLayer' which handles linking of

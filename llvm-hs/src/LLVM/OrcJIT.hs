@@ -37,6 +37,8 @@ module LLVM.OrcJIT (
     withObjectLinkingLayer,
     -- ** Dispose of linking layers
     disposeLinkingLayer,
+    -- ** Add an object file
+    addObjectFile,
     -- * JITCompileCallbackManager
     JITCompileCallbackManager,
     newJITCompileCallbackManager,
@@ -54,3 +56,4 @@ import LLVM.Internal.OrcJIT.CompileLayer
 import LLVM.Internal.OrcJIT.CompileOnDemandLayer
 import LLVM.Internal.OrcJIT.IRCompileLayer
 import LLVM.Internal.OrcJIT.IRTransformLayer
+import LLVM.Internal.OrcJIT.LinkingLayer

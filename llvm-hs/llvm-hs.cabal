@@ -134,6 +134,7 @@ library
     LLVM.Internal.OrcJIT.CompileOnDemandLayer
     LLVM.Internal.OrcJIT.IRCompileLayer
     LLVM.Internal.OrcJIT.IRTransformLayer
+    LLVM.Internal.OrcJIT.LinkingLayer
     LLVM.Internal.Operand
     LLVM.Internal.PassManager
     LLVM.Internal.RawOStream

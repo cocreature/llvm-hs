@@ -16,8 +16,8 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
 #include "llvm-c/Object.h"
+#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
 
 using namespace llvm;
 using namespace orc;
@@ -174,6 +174,32 @@ static std::string mangle(StringRef name, LLVMTargetDataRef dataLayout) {
     return mangledName;
 }
 
+// LLVM doesn’t declare this function in a header so we need to copy it here
+static inline object::OwningBinary<object::ObjectFile> *
+unwrap(LLVMObjectFileRef OF) {
+    return reinterpret_cast<object::OwningBinary<object::ObjectFile> *>(OF);
+}
+
+static JITSymbolFlags unwrap(LLVMJITSymbolFlags f) {
+    JITSymbolFlags flags = JITSymbolFlags::None;
+#define ENUM_CASE(x)                                                           \
+    if (f & LLVMJITSymbolFlag##x)                                              \
+        flags |= JITSymbolFlags::x;
+    LLVM_HS_FOR_EACH_JIT_SYMBOL_FLAG(ENUM_CASE)
+#undef ENUM_CASE
+    return flags;
+}
+
+static LLVMJITSymbolFlags wrap(JITSymbolFlags f) {
+    unsigned r = 0;
+#define ENUM_CASE(x)                                                           \
+    if ((char)(f & JITSymbolFlags::x))                                         \
+        r |= (unsigned)LLVMJITSymbolFlag##x;
+    LLVM_HS_FOR_EACH_JIT_SYMBOL_FLAG(ENUM_CASE)
+#undef ENUM_CASE
+    return LLVMJITSymbolFlags(r);
+}
+
 extern "C" {
 
 /* Constructor functions for the different compile layers */
@@ -299,13 +325,13 @@ void LLVM_Hs_disposeLambdaResolver(LLVMLambdaResolverRef resolver) {
 }
 
 LLVMObjectHandle LLVM_Hs_LinkingLayer_addObject(LinkingLayer *linkLayer,
-                                                LLVMObjectFileRef  obj,
+                                                LLVMObjectFileRef objRef,
                                                 LLVMLambdaResolverRef resolver,
                                                 char **errorMessage) {
-    auto obj2 = reinterpret_cast<object::OwningBinary<object::ObjectFile> *>(obj);
-    auto obj3 = std::move(*obj2);
-    auto obj4 = std::make_shared<object::OwningBinary<object::ObjectFile>>(std::move(obj3));
-    if (auto handleOrErr = linkLayer->addObject(std::move(obj4), *resolver)) {
+
+    std::shared_ptr<object::OwningBinary<object::ObjectFile>> obj{
+        unwrap(objRef), [](object::OwningBinary<object::ObjectFile> *) {}};
+    if (auto handleOrErr = linkLayer->addObject(std::move(obj), *resolver)) {
         *errorMessage = nullptr;
         return *handleOrErr;
     } else {
@@ -313,26 +339,6 @@ LLVMObjectHandle LLVM_Hs_LinkingLayer_addObject(LinkingLayer *linkLayer,
         *errorMessage = strdup(errString.c_str());
         return 0;
     }
-}
-
-static JITSymbolFlags unwrap(LLVMJITSymbolFlags f) {
-    JITSymbolFlags flags = JITSymbolFlags::None;
-#define ENUM_CASE(x)                                                           \
-    if (f & LLVMJITSymbolFlag##x)                                              \
-        flags |= JITSymbolFlags::x;
-    LLVM_HS_FOR_EACH_JIT_SYMBOL_FLAG(ENUM_CASE)
-#undef ENUM_CASE
-    return flags;
-}
-
-static LLVMJITSymbolFlags wrap(JITSymbolFlags f) {
-    unsigned r = 0;
-#define ENUM_CASE(x)                                                           \
-    if ((char)(f & JITSymbolFlags::x))                                         \
-        r |= (unsigned)LLVMJITSymbolFlag##x;
-    LLVM_HS_FOR_EACH_JIT_SYMBOL_FLAG(ENUM_CASE)
-#undef ENUM_CASE
-    return LLVMJITSymbolFlags(r);
 }
 
 JITTargetAddress LLVM_Hs_JITSymbol_getAddress(LLVMJITSymbolRef symbol,

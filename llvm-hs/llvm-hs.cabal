@@ -167,6 +167,7 @@ library
     LLVM.Internal.FFI.MemoryBuffer
     LLVM.Internal.FFI.Metadata
     LLVM.Internal.FFI.Module
+    LLVM.Internal.FFI.NewPassManager
     LLVM.Internal.FFI.ObjectFile
     LLVM.Internal.FFI.OrcJIT
     LLVM.Internal.FFI.OrcJIT.CompileLayer
@@ -224,6 +225,7 @@ library
     src/LLVM/Internal/FFI/OrcJITC.cpp
     src/LLVM/Internal/FFI/RawOStreamC.cpp
     src/LLVM/Internal/FFI/PassManagerC.cpp
+    src/LLVM/Internal/FFI/NewPassManagerC.cpp
     src/LLVM/Internal/FFI/RTDyldMemoryManager.cpp
     src/LLVM/Internal/FFI/SMDiagnosticC.cpp
     src/LLVM/Internal/FFI/TargetC.cpp
